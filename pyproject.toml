@@ -1,0 +1,62 @@
+[project]
+name = "gulf-health-lakehouse"
+version = "0.1.0"
+description = "Synthetic health-tech data domain on an open, modern data stack (portfolio)."
+authors = [{ name = "Abderrahman Labib" }]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+
+# Core runtime deps used by the data generator, A/B analysis, ingestion and Spark.
+dependencies = [
+    "numpy==1.26.4",
+    "pandas==2.2.2",
+    "pyarrow==16.1.0",
+    "Faker==25.8.0",
+    "PyYAML==6.0.1",
+    "scipy==1.13.1",
+    "matplotlib==3.9.0",
+    "SQLAlchemy==2.0.30",
+    "psycopg2-binary==2.9.9",
+]
+
+[project.optional-dependencies]
+# Transform layer. Kept separate so the generator image stays slim.
+dbt = [
+    "dbt-core==1.8.2",
+    "dbt-postgres==1.8.2",
+    "dbt-bigquery==1.8.1",
+]
+# Streaming (Phase 6).
+kafka = [
+    "confluent-kafka==2.4.0",
+]
+# Heavy batch (Phase 7). Pinned to match Spark 3.5.x.
+spark = [
+    "pyspark==3.5.1",
+]
+dev = [
+    "pytest==8.2.2",
+    "ruff==0.4.9",
+]
+
+[project.scripts]
+generate-health-data = "data_generator.generate:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["data_generator*", "ingestion*", "analysis*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
