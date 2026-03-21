@@ -1,0 +1,34 @@
+# Synthetic data generator configuration.
+# Everything is parameterized: change these and the generator still works.
+
+seed: 42                 # master seed -> full reproducibility
+users: 500               # number of synthetic users (TARGET_USERS)
+history_months: 18       # months of daily history (HISTORY_MONTHS)
+end_date: "2025-12-31"   # last day of history (history runs backwards from here)
+
+output_dir: "data/raw"
+sample_dir: "data/raw/sample"
+sample_users: 5          # how many users to copy into the committed sample
+formats: ["parquet", "csv"]
+
+# Cadence (in days) for body-composition (InBody-style) scans, per user.
+# Each user is randomly assigned one of these cadences.
+body_scan_cadences: [7, 14, 30]
+
+# Device dimension. weight = sampling probability for assigning a primary device.
+devices:
+  - {device_id: 1, brand: "Xiaomi",  model: "Smart Band 8",   category: "wearable", weight: 0.34}
+  - {device_id: 2, brand: "Huawei",  model: "Band 9",         category: "wearable", weight: 0.26}
+  - {device_id: 3, brand: "Apple",   model: "Watch Series 9", category: "wearable", weight: 0.22}
+  - {device_id: 4, brand: "InBody",  model: "270",            category: "scale",    weight: 0.18}
+
+# Slowly-changing user attributes (drive the Phase 5 SCD2 demo).
+membership_tiers: ["free", "plus", "pro"]
+companies: ["Acme Health", "GulfFit", "NovaCorp", "Self (B2C)"]
+
+# A/B experiment (Phase 2): notification template A vs B.
+experiment:
+  name: "notif_template_v1"
+  split: 0.5                 # share assigned to variant B
+  base_engagement: 0.18      # baseline next-day engagement for control (A)
+  lift: 0.03                 # true absolute lift applied to variant B
