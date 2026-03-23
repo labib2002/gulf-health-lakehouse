@@ -1,0 +1,14 @@
+user_id,membership_tier,company,effective_from
+1,free,NovaCorp,2024-07-10
+1,plus,NovaCorp,2025-11-30
+2,free,Self (B2C),2024-07-10
+2,plus,Self (B2C),2024-12-27
+2,pro,Self (B2C),2025-11-14
+3,free,NovaCorp,2024-07-10
+3,plus,NovaCorp,2024-11-18
+3,pro,NovaCorp,2025-10-28
+4,free,GulfFit,2024-07-10
+4,plus,GulfFit,2025-07-29
+5,free,GulfFit,2024-07-10
+5,plus,GulfFit,2024-10-22
+5,pro,GulfFit,2025-05-04

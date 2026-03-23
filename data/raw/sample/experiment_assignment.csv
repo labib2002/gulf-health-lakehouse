@@ -1,0 +1,6 @@
+user_id,experiment_name,variant,engaged_next_day
+1,notif_template_v1,A,0
+2,notif_template_v1,A,0
+3,notif_template_v1,B,0
+4,notif_template_v1,A,1
+5,notif_template_v1,A,0
