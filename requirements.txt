@@ -1,0 +1,10 @@
+# Runtime deps for the generator + ingestion runner image (Phase 1).
+# Kept minimal and pinned so the Docker layer cache is stable and the image small.
+# dbt / spark / kafka deps live in their own phases' images, not here.
+numpy==1.26.4
+pandas==2.2.2
+pyarrow==16.1.0
+Faker==25.8.0
+PyYAML==6.0.1
+SQLAlchemy==2.0.30
+psycopg2-binary==2.9.9
