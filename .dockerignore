@@ -1,0 +1,33 @@
+# Keep the build context tiny -> faster builds, smaller cache invalidation.
+.git
+.gitignore
+.gitattributes
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Never bake data, secrets, or build meta into the image.
+data/
+!data/raw/sample/
+.env
+*.env
+*.json
+BUILD_PROGRESS.md
+BUILD_TIMELINE.md
+.commit_helper.sh
+
+# Other phases' assets aren't needed by the runner image.
+transform/
+orchestration/
+streaming/
+batch/
+analysis/
+dashboards/
+warehouse/
+docs/
+tests/
+.github/
+*.md
