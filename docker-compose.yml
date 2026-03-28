@@ -1,0 +1,57 @@
+# Base stack: Postgres + the data runner.
+# Bring up:   docker compose up -d postgres
+# Generate:   docker compose run --rm runner               # default CMD = generate
+# Load:       docker compose run --rm runner -m ingestion.load_to_postgres
+#
+# Airflow (Phase 4) and Kafka (Phase 6) live in their own compose files and join
+# the same `health-net` network so services can talk across files.
+
+name: gulf-health-lakehouse
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: ghl-postgres
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      # Host 5433 -> container 5432 to avoid clashing with a local Postgres on 5432.
+      # Override with HOST_PG_PORT in .env if you like.
+      - "${HOST_PG_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` returns 0 only once the server accepts connections, so
+      # dependents waiting on service_healthy won't start against a cold DB.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [health-net]
+
+  runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghl-runner:latest
+    container_name: ghl-runner
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres   # talk to the service by name on the shared net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Persist generated data on the host so dbt/Spark on the host can read it.
+      - ./data:/app/data
+    networks: [health-net]
+
+volumes:
+  pgdata:
+
+networks:
+  health-net:
+    name: health-net
