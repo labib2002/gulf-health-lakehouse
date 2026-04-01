@@ -3,7 +3,7 @@
 .DEFAULT_GOAL := help
 PY ?= python
 
-.PHONY: help install generate generate-small test lint clean
+.PHONY: help install generate generate-small test lint clean up down build load db-shell
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -26,3 +26,20 @@ lint: ## Ruff lint
 
 clean: ## Remove generated data + caches (keeps committed sample)
 	rm -rf data/raw/*.parquet data/raw/*.csv .pytest_cache **/__pycache__
+
+# --- Docker (Phase 1) ---
+build: ## Build the runner image
+	docker compose build runner
+
+up: ## Start Postgres (detached) and wait for healthy
+	docker compose up -d postgres
+
+down: ## Stop the stack (keeps the pgdata volume)
+	docker compose down
+
+load: ## Generate (in container) then load into Postgres
+	docker compose run --rm runner -m data_generator.generate
+	docker compose run --rm runner -m ingestion.load_to_postgres
+
+db-shell: ## psql into the running Postgres
+	docker exec -it ghl-postgres psql -U $${POSTGRES_USER:-health} -d $${POSTGRES_DB:-health}
