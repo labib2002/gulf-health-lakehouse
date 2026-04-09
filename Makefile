@@ -21,6 +21,9 @@ generate-small: ## Generate a tiny dataset (fast smoke; no sample overwrite)
 test: ## Run pytest
 	$(PY) -m pytest
 
+ab-test: ## Run the A/B analysis (needs full generated data: make generate)
+	$(PY) -m analysis.ab_test.ab_test
+
 lint: ## Ruff lint
 	$(PY) -m ruff check .
 
