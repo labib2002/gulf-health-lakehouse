@@ -1,0 +1,35 @@
+name: "gulf_health"
+version: "1.0.0"
+config-version: 2
+
+profile: "gulf_health"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Materialization strategy (ADR-0004):
+#   staging      -> views   (cheap, always-fresh light cleaning over raw)
+#   intermediate -> ephemeral (CTEs inlined; no warehouse object)
+#   marts        -> tables  (queried often; one fact is incremental)
+models:
+  gulf_health:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: ephemeral
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  gulf_health:
+    +schema: seeds

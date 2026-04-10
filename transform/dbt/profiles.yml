@@ -1,0 +1,28 @@
+# Self-contained profiles. No secrets: everything reads from env with sane
+# defaults. Run dbt from this dir, or set DBT_PROFILES_DIR to it.
+#
+#   postgres  -> the compose Postgres (host port 5433 by default; see ADR-0002)
+#   bigquery  -> Phase 5 target (built offline until BQ creds exist)
+gulf_health:
+  target: postgres
+  outputs:
+    postgres:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"
+      port: "{{ env_var('DBT_PG_PORT', '5433') | int }}"
+      user: "{{ env_var('POSTGRES_USER', 'health') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'health') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'health') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'analytics') }}"
+      threads: 4
+
+    # Phase 5. Filled in / activated at the BigQuery credential boundary.
+    bigquery:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('BQ_PROJECT_ID', 'TODO-bq-project') }}"
+      dataset: "{{ env_var('BQ_DATASET', 'health_lakehouse') }}"
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS', '') }}"
+      location: "{{ env_var('BQ_LOCATION', 'US') }}"
+      threads: 4
+      priority: interactive
