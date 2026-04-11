@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Raw synthetic tables landed by the ingestion loader
+      (ingestion/load_to_postgres.py). One table per generator output.
+    schema: raw
+    tables:
+      - name: dim_device
+      - name: dim_user
+      - name: user_attr_history
+      - name: daily_activity
+        loaded_at_field: null
+      - name: intraday_hr
+      - name: body_scan
+      - name: nutrition_log
+      - name: experiment_assignment
