@@ -1,0 +1,97 @@
+version: 2
+
+models:
+  - name: stg_users
+    description: Cleaned user dimension (one row per user).
+    columns:
+      - name: user_id
+        description: Surrogate user key.
+        data_tests: [unique, not_null]
+      - name: sex
+        data_tests:
+          - accepted_values: { values: ["M", "F"] }
+      - name: primary_device_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_devices')
+              field: device_id
+
+  - name: stg_devices
+    description: Device dimension (wearables + scale).
+    columns:
+      - name: device_id
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests:
+          - accepted_values: { values: ["wearable", "scale"] }
+
+  - name: stg_user_attr_history
+    description: Effective-dated user attribute spans (SCD2 source).
+    columns:
+      - name: user_id
+        data_tests:
+          - not_null
+          - relationships: { to: ref('stg_users'), field: user_id }
+      - name: membership_tier
+        data_tests:
+          - accepted_values: { values: ["free", "plus", "pro"] }
+      - name: effective_from
+        data_tests: [not_null]
+
+  - name: stg_daily_activity
+    description: Daily wearable activity, one row per user/day.
+    columns:
+      - name: user_id
+        data_tests:
+          - not_null
+          - relationships: { to: ref('stg_users'), field: user_id }
+      - name: activity_date
+        data_tests: [not_null]
+      - name: steps
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 0, max_value: 60000 }
+      - name: resting_hr
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 25, max_value: 120 }
+    data_tests:
+      # composite grain is unique
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [user_id, activity_date]
+
+  - name: stg_body_scan
+    description: InBody-style body-composition scans.
+    columns:
+      - name: user_id
+        data_tests:
+          - not_null
+          - relationships: { to: ref('stg_users'), field: user_id }
+      - name: body_fat_pct
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 3, max_value: 60 }
+      - name: weight_kg
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 30, max_value: 250 }
+
+  - name: stg_nutrition_log
+    description: One row per logged meal.
+    columns:
+      - name: user_id
+        data_tests:
+          - not_null
+          - relationships: { to: ref('stg_users'), field: user_id }
+      - name: meal_type
+        data_tests:
+          - accepted_values: { values: ["breakfast", "lunch", "dinner", "snack"] }
+
+  - name: stg_experiment_assignment
+    description: A/B assignment + outcome, one row per user.
+    columns:
+      - name: user_id
+        data_tests: [unique, not_null]
+      - name: variant
+        data_tests:
+          - accepted_values: { values: ["A", "B"] }
+      - name: engaged_next_day
+        data_tests:
+          - accepted_values: { values: [0, 1] }
