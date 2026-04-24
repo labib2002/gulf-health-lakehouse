@@ -1,0 +1,74 @@
+version: 2
+
+models:
+  - name: dim_user
+    description: User dimension with current membership tier + company.
+    columns:
+      - name: user_id
+        data_tests: [unique, not_null]
+      - name: membership_tier
+        data_tests:
+          - accepted_values: { values: ["free", "plus", "pro"] }
+      - name: primary_device_id
+        data_tests:
+          - relationships: { to: ref('dim_device'), field: device_id }
+
+  - name: dim_device
+    description: Conformed device dimension.
+    columns:
+      - name: device_id
+        data_tests: [unique, not_null]
+
+  - name: fct_daily_activity
+    description: Daily activity fact (incremental on activity_date).
+    columns:
+      - name: user_id
+        data_tests:
+          - not_null
+          - relationships: { to: ref('dim_user'), field: user_id }
+      - name: date_key
+        data_tests:
+          - not_null
+          - relationships: { to: ref('dim_date'), field: date_key }
+      - name: restorative_sleep_ratio
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 0, max_value: 1, inclusive: true }
+      - name: hit_step_goal
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [user_id, date_key]
+      # custom generic test (macros/test_positive.sql)
+      - positive: { column_name: calories }
+
+  - name: fct_body_scan
+    description: Body-composition fact; holds point-in-time weight history.
+    columns:
+      - name: user_id
+        data_tests:
+          - not_null
+          - relationships: { to: ref('dim_user'), field: user_id }
+      - name: date_key
+        data_tests:
+          - relationships: { to: ref('dim_date'), field: date_key }
+      - name: weight_kg
+        data_tests:
+          - positive
+          - dbt_utils.accepted_range: { min_value: 30, max_value: 250 }
+
+  - name: fct_nutrition
+    description: Daily nutrition fact with intake vs expenditure balance.
+    columns:
+      - name: user_id
+        data_tests:
+          - not_null
+          - relationships: { to: ref('dim_user'), field: user_id }
+      - name: date_key
+        data_tests:
+          - relationships: { to: ref('dim_date'), field: date_key }
+      - name: calories_consumed
+        data_tests: [positive]
+      - name: meals_logged
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 1, max_value: 10 }
