@@ -30,6 +30,18 @@ lint: ## Ruff lint
 clean: ## Remove generated data + caches (keeps committed sample)
 	rm -rf data/raw/*.parquet data/raw/*.csv .pytest_cache **/__pycache__
 
+# --- dbt (Phase 3) ---
+DBT := cd transform/dbt && DBT_PROFILES_DIR=$$PWD POSTGRES_HOST=localhost $(PY) -m dbt.cli.main
+
+dbt-deps: ## Install dbt packages (dbt_utils)
+	$(DBT) deps
+
+dbt: ## Run dbt build (models + tests) against the loaded Postgres
+	$(DBT) build
+
+dbt-docs: ## Generate + serve the dbt lineage docs
+	$(DBT) docs generate && $(DBT) docs serve
+
 # --- Docker (Phase 1) ---
 build: ## Build the runner image
 	docker compose build runner
