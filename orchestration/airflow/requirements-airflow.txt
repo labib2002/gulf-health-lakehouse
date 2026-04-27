@@ -1,0 +1,12 @@
+# Extra deps layered onto the apache/airflow base image for the generator +
+# loader tasks. Installed UNDER Airflow's official constraints file (see the
+# Dockerfile), so versions are whatever Airflow 2.9 is compatible with — we do
+# NOT pin them here, otherwise they conflict with the constraints (e.g. pandas).
+#
+# dbt is intentionally NOT here — it lives in an isolated venv in the Dockerfile
+# so its dependency tree can't conflict with Airflow 2.9.
+numpy
+pandas
+pyarrow
+Faker
+PyYAML

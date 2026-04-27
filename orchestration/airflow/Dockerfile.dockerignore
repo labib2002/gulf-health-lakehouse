@@ -1,0 +1,26 @@
+# Build-context ignore specific to the Airflow image (context = repo root).
+# Unlike the root .dockerignore (tuned for the slim runner), the Airflow build
+# DOES need orchestration/, transform/, etc. mounted at build time is via volume,
+# but requirements-airflow.txt must be COPYable — so keep the context lean but
+# do NOT exclude orchestration/.
+.git
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+data/
+!data/raw/sample/
+.env
+*.env
+*-service-account*.json
+*credentials*.json
+gcp-key*.json
+BUILD_PROGRESS.md
+BUILD_TIMELINE.md
+.commit_helper.sh
+transform/dbt/target/
+transform/dbt/dbt_packages/
+transform/dbt/logs/
+orchestration/airflow/logs/
