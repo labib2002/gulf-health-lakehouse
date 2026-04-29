@@ -1,0 +1,109 @@
+# Airflow (LocalExecutor) for orchestrating generate -> load -> dbt.
+#
+# Composable with the base stack: it joins the same external `health-net` so the
+# DAG can reach the data Postgres (`ghl-postgres`). Airflow keeps its OWN
+# metadata Postgres (`airflow-db`) so orchestration state never mixes with data.
+#
+# Bring up the base data Postgres first, then this:
+#   docker compose up -d postgres
+#   docker compose -f orchestration/airflow/docker-compose.airflow.yml up -d
+# UI: http://localhost:8080  (admin / admin)
+
+name: ghl-airflow
+
+x-airflow-common: &airflow-common
+  build:
+    context: ../..
+    dockerfile: orchestration/airflow/Dockerfile
+  image: ghl-airflow:latest
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: "UTC"
+    # Where the DAG reaches the *data* Postgres + writes generated data.
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+    DBT_PG_PORT: "5432"          # in-network port (5433 is only the host mapping)
+    POSTGRES_USER: health
+    POSTGRES_PASSWORD: health
+    POSTGRES_DB: health
+    DBT_PROFILES_DIR: /opt/airflow/repo/transform/dbt
+    PROJECT_DIR: /opt/airflow/repo
+    PYTHONPATH: /opt/airflow/repo
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ../..:/opt/airflow/repo            # mount the whole repo (read code + write data)
+  depends_on:
+    airflow-db:
+      condition: service_healthy
+  networks: [health-net, airflow-net]
+
+services:
+  airflow-db:
+    image: postgres:16
+    container_name: ghl-airflow-db
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow-dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [airflow-net]
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: ghl-airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create --username admin --password admin \
+          --firstname Admin --lastname User --role Admin --email admin@example.com || true
+    restart: "no"
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: ghl-airflow-web
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: ghl-airflow-scheduler
+    command: scheduler
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    restart: always
+
+volumes:
+  airflow-dbdata:
+
+networks:
+  airflow-net:
+  health-net:
+    external: true   # created by the base docker-compose.yml
