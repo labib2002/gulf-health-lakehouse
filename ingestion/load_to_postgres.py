@@ -46,6 +46,16 @@ def engine_from_env():
     return create_engine(url, future=True)
 
 
+def _table_exists(eng, schema: str, table: str) -> bool:
+    """True if schema.table already exists (so we TRUNCATE instead of DROP)."""
+    q = text(
+        "select 1 from information_schema.tables "
+        "where table_schema = :s and table_name = :t"
+    )
+    with eng.connect() as conn:
+        return conn.execute(q, {"s": schema, "t": table}).first() is not None
+
+
 def load(source: str = "data/raw", only: list[str] | None = None, chunksize: int = 50_000) -> None:
     src = Path(source)
     eng = engine_from_env()
@@ -59,17 +69,29 @@ def load(source: str = "data/raw", only: list[str] | None = None, chunksize: int
             print(f"  ! skip {name}: {path} not found")
             continue
         df = pd.read_parquet(path)
-        # Replace makes re-runs idempotent (key requirement for Airflow retries).
+        # Idempotent reload that is safe even when dbt views depend on these
+        # tables: on the FIRST load the table doesn't exist, so we create it via
+        # `replace`; on subsequent loads we TRUNCATE + append instead of dropping,
+        # so dependent objects (the dbt staging views) are preserved. A naive
+        # `if_exists="replace"` would DROP the table and fail with
+        # DependentObjectsStillExist once views exist on top of it.
+        exists = _table_exists(eng, RAW_SCHEMA, name)
+        if exists:
+            with eng.begin() as conn:
+                conn.execute(text(f'TRUNCATE TABLE {RAW_SCHEMA}."{name}"'))
+            mode = "append"
+        else:
+            mode = "replace"
         df.to_sql(
             name,
             eng,
             schema=RAW_SCHEMA,
-            if_exists="replace",
+            if_exists=mode,
             index=False,
             chunksize=chunksize,
             method="multi",
         )
-        print(f"  loaded {RAW_SCHEMA}.{name:24s} {len(df):>12,} rows")
+        print(f"  loaded {RAW_SCHEMA}.{name:24s} {len(df):>12,} rows ({mode})")
 
 
 def main() -> None:
