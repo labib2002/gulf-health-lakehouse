@@ -42,6 +42,21 @@ dbt: ## Run dbt build (models + tests) against the loaded Postgres
 dbt-docs: ## Generate + serve the dbt lineage docs
 	$(DBT) docs generate && $(DBT) docs serve
 
+# --- Airflow (Phase 4) ---
+AF := docker compose -f orchestration/airflow/docker-compose.airflow.yml
+
+airflow-build: ## Build the Airflow image
+	$(AF) build
+
+airflow-up: ## Start Airflow (needs base postgres up first: make up)
+	$(AF) up -d
+
+airflow-down: ## Stop the Airflow stack
+	$(AF) down
+
+airflow-trigger: ## Trigger the health_pipeline DAG
+	docker exec ghl-airflow-scheduler airflow dags trigger health_pipeline
+
 # --- Docker (Phase 1) ---
 build: ## Build the runner image
 	docker compose build runner
