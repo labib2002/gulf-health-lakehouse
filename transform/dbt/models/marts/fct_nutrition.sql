@@ -1,6 +1,18 @@
 -- Nutrition fact at user/day grain (rolled up from individual meals in the
 -- intermediate layer). Joins the daily activity calories so analysts can compare
 -- intake vs expenditure in one place.
+--
+-- On BigQuery: partition by log_date, cluster by user_id. No-ops on Postgres.
+{{
+    config(
+        partition_by=(
+            {'field': 'log_date', 'data_type': 'date', 'granularity': 'day'}
+            if target.type == 'bigquery' else none
+        ),
+        cluster_by=(['user_id'] if target.type == 'bigquery' else none)
+    )
+}}
+
 with nutrition as (
     select * from {{ ref('int_nutrition_daily') }}
 ),

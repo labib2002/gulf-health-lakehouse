@@ -8,7 +8,14 @@
     config(
         materialized='incremental',
         unique_key=['user_id', 'date_key'],
-        incremental_strategy='delete+insert'
+        incremental_strategy=(
+            'insert_overwrite' if target.type == 'bigquery' else 'delete+insert'
+        ),
+        partition_by=(
+            {'field': 'activity_date', 'data_type': 'date', 'granularity': 'day'}
+            if target.type == 'bigquery' else none
+        ),
+        cluster_by=(['user_id'] if target.type == 'bigquery' else none)
     )
 }}
 
