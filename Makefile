@@ -57,6 +57,24 @@ airflow-down: ## Stop the Airflow stack
 airflow-trigger: ## Trigger the health_pipeline DAG
 	docker exec ghl-airflow-scheduler airflow dags trigger health_pipeline
 
+# --- Kafka (Phase 6) ---
+KAFKA := docker compose -f streaming/docker-compose.kafka.yml
+
+kafka-up: ## Start Kafka (KRaft); needs base postgres up for the consumer sink
+	$(KAFKA) up -d
+
+kafka-down: ## Stop Kafka
+	$(KAFKA) down
+
+kafka-topic: ## Create the wearable-events topic
+	KAFKA_BOOTSTRAP_SERVERS=localhost:9092 $(PY) -m streaming.create_topic
+
+kafka-produce: ## Produce 500 demo events (keyed by user_id, acks=all)
+	KAFKA_BOOTSTRAP_SERVERS=localhost:9092 $(PY) -m streaming.producer --count 500 --rate 200
+
+kafka-consume: ## Consume events into Postgres (group wearable-loaders)
+	KAFKA_BOOTSTRAP_SERVERS=localhost:9092 POSTGRES_HOST=localhost POSTGRES_PORT=5433 $(PY) -m streaming.consumer --max 500
+
 # --- Docker (Phase 1) ---
 build: ## Build the runner image
 	docker compose build runner
