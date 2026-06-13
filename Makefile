@@ -57,6 +57,14 @@ airflow-down: ## Stop the Airflow stack
 airflow-trigger: ## Trigger the health_pipeline DAG
 	docker exec ghl-airflow-scheduler airflow dags trigger health_pipeline
 
+# --- Spark (Phase 7) ---
+# Requires JAVA_HOME (Java 8/11/17) and, on Windows, HADOOP_HOME with winutils.
+spark: ## Run the rolling health score over the full history -> parquet
+	$(PY) -m batch.spark.rolling_health_score --source data/raw --out data/processed/health_score
+
+spark-show: ## Quick sample run (no write)
+	$(PY) -m batch.spark.rolling_health_score --source data/raw/sample --show
+
 # --- Kafka (Phase 6) ---
 KAFKA := docker compose -f streaming/docker-compose.kafka.yml
 
