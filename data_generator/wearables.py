@@ -20,8 +20,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .utils import date_range, rng_for
-
+from .utils import rng_for
 
 # Hour-of-day activity shape (sums to ~1): low overnight, peaks morning/evening.
 _HOURLY_SHAPE = np.array(

@@ -77,7 +77,8 @@ def test_rolling_window_is_trailing_30d(spark):
         [(1, "M", 40, "US")], ["user_id", "sex", "age", "country"]
     )
     # monkeypatch reads by calling compute's internals via temp parquet
-    import tempfile, os  # noqa: E401
+    import os
+    import tempfile  # noqa: E401
 
     d = tempfile.mkdtemp()
     activity.write.parquet(os.path.join(d, "daily_activity.parquet"))
@@ -91,7 +92,8 @@ def test_rolling_window_is_trailing_30d(spark):
 
 
 def test_plan_uses_broadcast_and_window(spark):
-    import tempfile, os  # noqa: E401
+    import os
+    import tempfile  # noqa: E401
 
     rows = [(1, dt.date(2025, 1, 1), 8000, 450, 60.0)]
     activity = spark.createDataFrame(

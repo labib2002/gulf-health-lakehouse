@@ -84,7 +84,9 @@ def main() -> None:
     parser.add_argument("--months", type=int, help="override history months")
     parser.add_argument("--seed", type=int, help="override master seed")
     parser.add_argument("--output-dir", type=str, help="override output dir")
-    parser.add_argument("--no-sample", action="store_true", help="skip writing the committed sample")
+    parser.add_argument(
+        "--no-sample", action="store_true", help="skip writing the committed sample"
+    )
     args = parser.parse_args()
 
     cfg = load_config()

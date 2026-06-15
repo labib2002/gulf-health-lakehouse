@@ -107,6 +107,7 @@ def make_plots(s: dict) -> list[Path]:
 def write_results(s: dict, z, t, n_req: int, power_now: float, plots: list[Path]) -> Path:
     diff = s["p_b"] - s["p_a"]
     significant = z.p_value < ALPHA
+    decision = "REJECT H0 — significant" if significant else "FAIL TO REJECT H0 — not significant"
     out = HERE / "results.md"
     out.write_text(
         f"""# A/B Test Results — notification template A vs B
@@ -139,7 +140,7 @@ def write_results(s: dict, z, t, n_req: int, power_now: float, plots: list[Path]
 
 - **{z}**
 - **{t}**
-- Decision at alpha={ALPHA}: **{"REJECT H0 — significant" if significant else "FAIL TO REJECT H0 — not significant"}**.
+- Decision at alpha={ALPHA}: **{decision}**.
 
 The z-test and Welch t-test agree (expected: with a 0/1 outcome and these sample
 sizes the two are asymptotically equivalent).

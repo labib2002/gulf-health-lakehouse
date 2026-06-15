@@ -22,7 +22,9 @@ def build_device_dim(cfg: dict[str, Any]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def assign_primary_devices(cfg: dict[str, Any], rng: np.random.Generator, n_users: int) -> np.ndarray:
+def assign_primary_devices(
+    cfg: dict[str, Any], rng: np.random.Generator, n_users: int
+) -> np.ndarray:
     """Pick each user's primary *wearable* device, weighted by popularity.
 
     Scales (InBody) are not "worn", so they are excluded from the primary-wearable
